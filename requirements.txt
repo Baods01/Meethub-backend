@@ -5,3 +5,5 @@ aerich
 asyncmy
 aiomysql
 pytest
+passlib
+bcrypt
