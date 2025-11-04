@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr, constr
+from pydantic import BaseModel, Field, constr
 from datetime import datetime
 from .roles import RoleResponse
 
@@ -7,7 +7,7 @@ from .roles import RoleResponse
 class UserBase(BaseModel):
     """用户基础模型"""
     username: str = Field(..., min_length=3, max_length=50, description="用户名")
-    email: Optional[EmailStr] = Field(None, description="邮箱")
+    email: Optional[str] = Field(None, description="邮箱")
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$", description="手机号")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
     bio: Optional[str] = Field(None, description="个人简介")
@@ -24,13 +24,13 @@ class UserCreate(UserBase):
         description="密码，至少8个字符",
         examples=["your-strong-password"]
     )
-    email: EmailStr = Field(..., description="邮箱")  # 创建时邮箱必填
+    email: str = Field(..., description="邮箱")  # 创建时邮箱必填
 
 
 class UserUpdate(BaseModel):
     """更新用户请求模型"""
     username: Optional[str] = Field(None, min_length=3, max_length=50, description="用户名")
-    email: Optional[EmailStr] = Field(None, description="邮箱")
+    email: Optional[str] = Field(None, description="邮箱")
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$", description="手机号")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
     bio: Optional[str] = Field(None, description="个人简介")

@@ -2,15 +2,18 @@ from fastapi import FastAPI,APIRouter
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
+from tests.app01 import UserApp,RoleApp 
 
-app01 = APIRouter()
+app00 = APIRouter()
 
-@app01.get("/")
+@app00.get("/")
 async def get():
     return {"message": "Hello World"}
 
 app = FastAPI()
-app.include_router(app01,tags=["App01"])
+app.include_router(app00,tags=["App01"])
+app.include_router(UserApp,tags=["UserApp"])
+app.include_router(RoleApp,tags=["RoleApp"])
 
 register_tortoise(
     app,

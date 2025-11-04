@@ -14,8 +14,8 @@ class Users(models.Model):
     bio = fields.TextField(null=True, description="个人简介")
     is_active = fields.BooleanField(default=True, description="是否激活")
     is_verified = fields.BooleanField(default=False, description="是否验证")
-    created_at = fields.DatetimeField(auto_now_add=True, description="创建时间")
-    updated_at = fields.DatetimeField(auto_now=True, description="更新时间")
+    created_at = fields.DatetimeField(default='2025-01-01',auto_now_add=True, description="创建时间")
+    updated_at = fields.DatetimeField(default='2025-01-01',auto_now=True, description="更新时间")
     last_login = fields.DatetimeField(null=True, description="最后登录时间")
 
     # 与角色的多对多关系
