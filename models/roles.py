@@ -11,6 +11,7 @@ class Roles(models.Model):
     is_active = fields.BooleanField(default=True, description="是否激活")
     created_at = fields.DatetimeField(auto_now_add=True, description="创建时间")
     updated_at = fields.DatetimeField(auto_now=True, description="更新时间")
+    permissions = fields.JSONField(null=True, description="权限列表")
 
     def __str__(self):
         return f"{self.name}"
