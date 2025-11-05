@@ -6,12 +6,14 @@ from settings import TORTOISE_ORM
 from apps.app01 import UserApp,RoleApp
 from apps.app00 import app00
 from apps.user_dtest import UserDTestApp
+from apps.roles_dtest import RoleDTestApp
 
 app = FastAPI()
 app.include_router(app00,tags=["App01"])
 app.include_router(UserApp,tags=["UserApp"])
 app.include_router(RoleApp,tags=["RoleApp"])
 app.include_router(UserDTestApp,tags=["UserDTestApp"])
+app.include_router(RoleDTestApp,tags=["RoleDTestApp"],prefix='/roledtest')
 
 register_tortoise(
     app,
