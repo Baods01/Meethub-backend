@@ -7,3 +7,4 @@ aiomysql
 pytest
 passlib
 bcrypt
+cryptography

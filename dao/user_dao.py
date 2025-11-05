@@ -9,7 +9,8 @@ class UserDAO(BaseDAO[Users]):
     """用户数据访问对象"""
 
     def __init__(self):
-        super().__init__(Users)
+        """初始化用户 DAO"""
+        super().__init__(model=Users)
 
     async def create_user(self, user_data: dict) -> Optional[Users]:
         """
