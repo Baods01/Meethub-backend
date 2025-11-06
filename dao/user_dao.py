@@ -1,5 +1,5 @@
 from typing import Optional, List
-from passlib.hash import bcrypt
+import bcrypt
 from tortoise.exceptions import DoesNotExist
 from models.users import Users
 from .base import BaseDAO
@@ -18,15 +18,37 @@ class UserDAO(BaseDAO[Users]):
         :param user_data: 用户数据字典
         :return: 创建的用户对象
         """
-        # 对密码进行哈希处理
+        # 检查密码长度并进行哈希处理
         if "password" in user_data:
-            user_data["password"] = bcrypt.hash(user_data["password"])
+            try:
+                # 将密码编码为字节
+                password = user_data["password"]
+                password_bytes = password.encode('utf-8')
+                
+                # 检查并截断密码（bcrypt的72字节限制）
+                if len(password_bytes) > 72:
+                    print(f"警告: 密码超过72字节限制，已自动截断: {len(password_bytes)} -> 72 bytes")
+                    password_bytes = password_bytes[:72]
+                
+                # 直接使用bcrypt进行哈希
+                hashed_password = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+                
+                # 将字节转换为字符串存储
+                user_data["password"] = hashed_password.decode('utf-8')
+                
+            except Exception as e:
+                print(f"密码哈希处理失败: {str(e)}")
+                return None
         
         try:
             return await self.create(**user_data)
         except Exception as e:
-            # 这里可以添加日志记录
             print(f"创建用户失败: {str(e)}")
+            # 打印用户数据时排除密码
+            user_data_debug = user_data.copy()
+            if "password" in user_data_debug:
+                user_data_debug["password"] = "***HIDDEN***"
+            print(f"用户数据: {user_data_debug}")
             return None
 
     async def get_user_by_email(self, email: str) -> Optional[Users]:
@@ -59,6 +81,9 @@ class UserDAO(BaseDAO[Users]):
         :return: 更新后的用户对象或None
         """
         if "password" in update_data:
+            if len(update_data["password"].encode('utf-8')) > 72:
+                print("密码长度超过72字节限制")
+                return None
             update_data["password"] = bcrypt.hash(update_data["password"])
         
         return await self.update(user_id, **update_data)

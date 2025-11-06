@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from schemas.auth import LoginRequest, Token
 from dao.user_dao import UserDAO
 from core.auth.jwt_handler import JWTHandler
-from passlib.hash import bcrypt
+import bcrypt
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
@@ -18,7 +18,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user_dao = UserDAO()
     
     # 查询用户
-    user = await user_dao.get_by_username(form_data.username)
+    user = await user_dao.get_user_by_username(form_data.username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,7 +27,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
     
     # 验证密码
-    if not bcrypt.verify(form_data.password, user.password):
+    # 处理密码长度限制
+    password_bytes = form_data.password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+
+    # 验证密码
+    stored_password = user.password.encode('utf-8')
+    if not bcrypt.checkpw(password_bytes, stored_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
