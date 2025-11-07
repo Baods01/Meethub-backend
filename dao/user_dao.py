@@ -100,8 +100,14 @@ class UserDAO(BaseDAO[Users]):
             if not user:
                 return False
             
+            # 从models.Roles导入Roles模型
+            from models.roles import Roles
+            role = await Roles.get(id=role_id)
+            if not role:
+                return False
+            
             # 使用 Tortoise-ORM 的多对多关系方法
-            await user.roles.add(role_id)
+            await user.roles.add(role)
             return True
         except Exception as e:
             print(f"添加用户角色失败: {str(e)}")
