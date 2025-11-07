@@ -81,10 +81,11 @@ class UserDAO(BaseDAO[Users]):
         :return: 更新后的用户对象或None
         """
         if "password" in update_data:
-            if len(update_data["password"].encode('utf-8')) > 72:
+            password_bytes = update_data["password"].encode('utf-8')
+            if len(password_bytes) > 72:
                 print("密码长度超过72字节限制")
                 return None
-            update_data["password"] = bcrypt.hash(update_data["password"])
+            update_data["password"] = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
         
         return await self.update(user_id, **update_data)
 
@@ -138,7 +139,15 @@ class UserDAO(BaseDAO[Users]):
         :param password: 待验证的密码
         :return: 密码是否正确
         """
-        return bcrypt.verify(password, user.password)
+        try:
+            password_bytes = password.encode('utf-8')
+            if len(password_bytes) > 72:
+                password_bytes = password_bytes[:72]
+            stored_password = user.password.encode('utf-8')
+            return bcrypt.checkpw(password_bytes, stored_password)
+        except Exception as e:
+            print(f"密码验证失败: {str(e)}")
+            return False
 
     async def get_user_roles(self, user_id: int) -> List[dict]:
         """

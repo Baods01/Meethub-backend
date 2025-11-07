@@ -77,6 +77,8 @@ class JWTAuthMiddleware(HTTPBearer):
         """
         public_paths = {
             "/auth/login",
+            "/auth/reset-password/verify",
+            "/auth/reset-password",
             "/docs",
             "/redoc",
             "/openapi.json"
