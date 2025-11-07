@@ -3,6 +3,7 @@ import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
 from fastapi.security import HTTPBearer
+from routers.auth import router as auth_router
 
 # from apps.app01 import UserApp,RoleApp
 # from apps.app00 import app00
@@ -27,6 +28,9 @@ app = FastAPI(
 # app.include_router(RoleDTestApp,tags=["RoleDTestApp"],prefix='/roledtest')
 # app.include_router(AuthRouter)
 # app.include_router(TestAuthRouter)
+
+# 引入新的认证路由
+app.include_router(auth_router)
 
 register_tortoise(
     app,
