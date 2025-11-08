@@ -33,8 +33,8 @@ class Activities(models.Model):
         description="活动发布者"
     )
 
-    # 与报名表的反向关系
-    registrations = fields.ReverseRelation['Registrations']
+    # 与报名表的反向关系（使用字符串引用避免循环导入）
+    registrations = fields.ReverseRelation['models.Registrations']
 
     def __str__(self):
         return f"{self.title}"
