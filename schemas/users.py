@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, constr
 from datetime import datetime
 from .roles import RoleResponse
@@ -11,6 +11,16 @@ class UserBase(BaseModel):
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$", description="手机号")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
     bio: Optional[str] = Field(None, description="个人简介")
+    profile_attributes: Optional[Dict[str, Any]] = Field(
+        None,
+        description="用户个性属性",
+        example={
+            "college": "计算机学院",
+            "grade": "2023",
+            "major": "软件工程",
+            "skills": ["Python", "JavaScript"]
+        }
+    )
     avatar: Optional[str] = Field(None, description="头像URL")
     is_active: bool = Field(True, description="是否激活")
 
