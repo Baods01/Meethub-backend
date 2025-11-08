@@ -5,6 +5,7 @@ from settings import TORTOISE_ORM
 from fastapi.security import HTTPBearer
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
+from routers.users import router as users_router
 
 # from apps.app01 import UserApp,RoleApp
 # from apps.app00 import app00
@@ -20,6 +21,7 @@ app = FastAPI(
     openapi_tags=[
         {"name": "认证", "description": "认证相关接口"},
         {"name": "管理员", "description": "管理员相关接口"},
+        {"name": "用户", "description": "用户相关接口"},
     ]
 )
 # app.include_router(app00,tags=["App01"])
@@ -48,9 +50,10 @@ async def MyCORSHandler(request: Request, call_next):
     
     return response
 
-# 引入认证路由和管理员路由
+# 引入认证路由、管理员路由和用户路由
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(users_router)
 
 register_tortoise(
     app,

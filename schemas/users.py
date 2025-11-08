@@ -68,6 +68,22 @@ class UserProfileUpdate(BaseModel):
         }
     )
 
+class UserBasicUpdate(BaseModel):
+    """更新用户基本信息请求模型"""
+    nickname: Optional[str] = Field(None, max_length=50, description="昵称")
+    bio: Optional[str] = Field(None, description="个人简介")
+    profile_attributes: Optional[Dict[str, Any]] = Field(
+        None,
+        description="用户个性属性",
+        example={
+            "college": "计算机学院",
+            "grade": "2023",
+            "major": "软件工程",
+            "skills": ["Python", "JavaScript"]
+        }
+    )
+    avatar: Optional[str] = Field(None, description="头像URL")
+
 class UserResponse(UserBase):
     """用户响应模型"""
     id: int = Field(..., description="用户ID")
