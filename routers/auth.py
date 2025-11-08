@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from schemas.auth import (
     LoginRequest, Token, RefreshTokenResponse,
     PasswordResetVerify, PasswordReset
@@ -13,11 +13,12 @@ from core.permissions import USER_READ
 import bcrypt
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
-    用户登录接口
+    用户登录接口 (OAuth2密码模式)
     :param form_data: 表单数据，包含username和password
     :return: JWT令牌
     """
@@ -38,6 +39,43 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 生成JWT令牌
+    token_data = JWTHandler.create_token_response(user.id)
+    
+    return Token(**token_data)
+
+@router.post("/login/credential", response_model=Token)
+async def login_by_credential(login_data: LoginRequest):
+    """
+    用户登录接口 (支持邮箱/用户名/手机号登录)
+    :param login_data: 登录请求数据，包含username(可以是用户名/邮箱/手机号)和password
+    :return: JWT令牌
+    """
+    # 获取用户数据访问对象
+    user_dao = UserDAO()
+    
+    # 尝试通过不同的凭证查询用户
+    user = await user_dao.get_user_by_username(login_data.username)
+    if not user:
+        user = await user_dao.get_user_by_email(login_data.username)
+    if not user:
+        user = await user_dao.get_user_by_phone(login_data.username)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户名/邮箱/手机号或密码错误",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 验证密码
+    if not await user_dao.verify_password(user, login_data.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户名/邮箱/手机号或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

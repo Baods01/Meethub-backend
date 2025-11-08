@@ -73,6 +73,17 @@ class UserDAO(BaseDAO[Users]):
         except DoesNotExist:
             return None
 
+    async def get_user_by_phone(self, phone: str) -> Optional[Users]:
+        """
+        通过手机号获取用户
+        :param phone: 用户手机号
+        :return: 用户对象或None
+        """
+        try:
+            return await Users.get(phone=phone)
+        except DoesNotExist:
+            return None
+
     async def update_user(self, user_id: int, update_data: dict) -> Optional[Users]:
         """
         更新用户信息
