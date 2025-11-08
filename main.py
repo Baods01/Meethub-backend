@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, Response
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
@@ -34,8 +34,17 @@ async def MyCORSHandler(request: Request, call_next):
     """
     自定义CORS中间件，处理跨域请求
     """
-    response = await call_next(request)
+    if request.method == "OPTIONS":
+        # 处理预检请求
+        response = Response()
+    else:
+        response = await call_next(request)
+    
     response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Max-Age"] = "3600"  # 预检请求缓存时间
+    
     return response
 
 # 引入新的认证路由
