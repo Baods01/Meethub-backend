@@ -2,3 +2,4 @@ MeethubEnv
 __pycache__/
 .pytest_cache/
 test
+front
