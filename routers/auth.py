@@ -14,15 +14,6 @@ import bcrypt
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
-@router.middleware("http")
-async def MyCORSHandler(request: Request, call_next):
-    """
-    自定义CORS中间件，处理跨域请求
-    """
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
-
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """

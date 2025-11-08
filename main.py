@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
@@ -28,6 +28,15 @@ app = FastAPI(
 # app.include_router(RoleDTestApp,tags=["RoleDTestApp"],prefix='/roledtest')
 # app.include_router(AuthRouter)
 # app.include_router(TestAuthRouter)
+
+@app.middleware("http")
+async def MyCORSHandler(request: Request, call_next):
+    """
+    自定义CORS中间件，处理跨域请求
+    """
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 # 引入新的认证路由
 app.include_router(auth_router)
