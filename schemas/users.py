@@ -55,6 +55,19 @@ class UserUpdate(BaseModel):
     )
 
 
+class UserProfileUpdate(BaseModel):
+    """更新用户个性属性请求模型"""
+    profile_attributes: Dict[str, Any] = Field(
+        ...,
+        description="用户个性属性",
+        example={
+            "college": "计算机学院",
+            "grade": "2023",
+            "major": "软件工程",
+            "skills": ["Python", "JavaScript"]
+        }
+    )
+
 class UserResponse(UserBase):
     """用户响应模型"""
     id: int = Field(..., description="用户ID")

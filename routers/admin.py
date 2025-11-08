@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
-from schemas.users import UserResponse, UserUpdate
+from schemas.users import UserResponse, UserUpdate, UserProfileUpdate
 from dao.user_dao import UserDAO
 from dao.role_dao import RoleDAO
 from core.middleware.auth_middleware import JWTAuthMiddleware
@@ -174,6 +174,74 @@ async def update_user_details(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"更新用户角色时发生错误：{str(e)}"
             )
+    
+    # 获取更新后的用户完整信息
+    user = await user_dao.get_by_id(user_id)
+    roles = await user.roles.all()
+    
+    # 构建响应数据
+    user_dict = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar": user.avatar,
+        "nickname": user.nickname,
+        "bio": user.bio,
+        "profile_attributes": user.profile_attributes,
+        "is_active": user.is_active,
+        "is_verified": user.is_verified,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+        "last_login": user.last_login,
+        "roles": [{
+            "id": role.id,
+            "name": role.name,
+            "code": role.code,
+            "description": role.description,
+            "permissions": role.permissions,
+            "is_active": role.is_active,
+            "created_at": role.created_at,
+            "updated_at": role.updated_at
+        } for role in roles]
+    }
+    
+    return user_dict
+
+@router.patch("/users/{user_id}/profile", response_model=UserResponse)
+async def update_user_profile_attributes(
+    user_id: int,
+    profile_update: UserProfileUpdate,
+    _=requires_permissions([USER_UPDATE])
+):
+    """
+    修改指定ID用户的个性属性信息
+    需要USER_UPDATE权限
+    :param user_id: 用户ID
+    :param profile_update: 用户个性属性更新信息
+    :return: 更新后的用户信息
+    """
+    # 获取用户
+    user = await user_dao.get_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到ID为{user_id}的用户"
+        )
+    
+    # 更新用户个性属性
+    try:
+        user = await user_dao.update_user(user_id, {"profile_attributes": profile_update.profile_attributes})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="更新用户个性属性失败"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"更新用户个性属性时发生错误：{str(e)}"
+        )
     
     # 获取更新后的用户完整信息
     user = await user_dao.get_by_id(user_id)
