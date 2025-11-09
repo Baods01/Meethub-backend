@@ -1,16 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import status as http_status  # 重命名避免冲突
 from schemas.registrations import (
     RegistrationCreate,
     RegistrationInDB,
     RegistrationList,
-    RegistrationSearch
+    RegistrationSearch,
+    RegistrationUpdate
 )
 from schemas.activities import ActivityInDB
 from dao.registration_dao import RegistrationDAO
 from dao.activity_dao import ActivityDAO
 from core.permission_checker import requires_permissions
 from core.middleware.auth_middleware import JWTAuthMiddleware
-from typing import List
+from core.permissions import ENROLLMENT_APPROVE
+from typing import List, Dict
 
 router = APIRouter(
     prefix="/registrations",
@@ -24,7 +27,7 @@ activity_dao = ActivityDAO()
 @router.post(
     "/",
     response_model=RegistrationInDB,
-    status_code=status.HTTP_201_CREATED
+    status_code=http_status.HTTP_201_CREATED
 )
 async def create_registration(
     registration: RegistrationCreate,
@@ -44,19 +47,19 @@ async def create_registration(
         activity = await activity_dao.get_activity_with_stats(registration.activity_id)
         if not activity:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="活动不存在"
             )
 
         if activity.status != "published":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="活动当前状态不可报名"
             )
 
         if activity.current_participants >= activity.max_participants:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="活动报名人数已满"
             )
 
@@ -77,7 +80,7 @@ async def create_registration(
         raise he
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"创建报名失败: {str(e)}"
         )
 
@@ -108,7 +111,7 @@ async def get_my_registrations(
         return registrations
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取报名记录失败: {str(e)}"
         )
 
@@ -134,13 +137,13 @@ async def get_activity_registrations(
         activity = await activity_dao.get_activity_with_stats(activity_id)
         if not activity:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="活动不存在"
             )
 
         if activity.publisher.id != request.state.user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="只有活动发布者可以查看报名记录"
             )
 
@@ -155,7 +158,7 @@ async def get_activity_registrations(
         raise he
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取活动报名记录失败: {str(e)}"
         )
 
@@ -176,7 +179,7 @@ async def get_registration_detail(
         registration = await registration_dao.get_registration_detail(registration_id)
         if not registration:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="报名记录不存在"
             )
 
@@ -185,7 +188,7 @@ async def get_registration_detail(
         if (current_user_id != registration.participant.id and 
             current_user_id != registration.activity.publisher.id):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="只有报名者本人或活动发布者可以查看报名详情"
             )
 
@@ -194,6 +197,103 @@ async def get_registration_detail(
         raise he
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取报名详情失败: {str(e)}"
+        )
+
+@router.patch(
+    "/{registration_id}/status",
+    response_model=Dict,
+    status_code=http_status.HTTP_200_OK
+)
+async def update_registration_status(
+    registration_id: int,
+    registration_update: RegistrationUpdate,
+    request: Request
+):
+    """
+    更新报名状态
+    - 需要是活动发布者权限
+    - 验证状态变更是否合法
+    - 返回更新后的报名信息
+    
+    报名状态说明:
+    - pending: 待审核（初始状态）
+    - approved: 已通过（审核通过）
+    - rejected: 已拒绝（审核不通过）
+    - cancelled: 已取消（用户主动取消或管理员取消）
+    
+    状态流转规则:
+    1. pending -> approved/rejected：由活动发布者审核
+    2. pending -> cancelled：报名者可以取消
+    3. approved -> cancelled：特殊情况下由发布者取消
+    4. rejected/cancelled：终态，不可再变更
+    """
+    try:
+        # 获取报名详情
+        registration = await registration_dao.get_registration_detail(registration_id)
+        if not registration:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="报名记录不存在"
+            )
+
+        # 验证用户是否为活动发布者
+        current_user_id = request.state.user.id
+        if current_user_id != registration.activity.publisher.id:
+            # 如果是取消操作，检查是否为报名者本人
+            if (registration_update.status == "cancelled" and 
+                current_user_id == registration.participant.id):
+                pass  # 允许报名者取消自己的报名
+            else:
+                raise HTTPException(
+                    status_code=http_status.HTTP_403_FORBIDDEN,
+                    detail="只有活动发布者可以更改报名状态"
+                )
+
+        # 验证状态变更是否合法
+        current_status = registration.status
+        new_status = registration_update.status
+
+        # 状态流转验证
+        if current_status in ["rejected", "cancelled"]:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="已拒绝或已取消的报名不能更改状态"
+            )
+        
+        if current_status == "approved" and new_status not in ["cancelled"]:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="已通过的报名只能被取消"
+            )
+
+        # 更新状态
+        updated_registration = await registration_dao.update_registration_status(
+            registration_id=registration_id,
+            status=new_status,
+            activity_id=registration.activity.id
+        )
+
+        if not updated_registration:
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="更新报名状态失败"
+            )
+
+        # 重新获取完整的报名信息
+        updated_registration = await registration_dao.get_registration_detail(registration_id)
+        
+        return {
+            "success": True,
+            "message": f"报名状态已更新为：{new_status}",
+            "registration": RegistrationInDB.from_orm(updated_registration).model_dump()
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"更新报名状态失败: {str(e)}"
         )
