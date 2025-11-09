@@ -6,8 +6,11 @@ from fastapi.security import HTTPBearer
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
 from routers.users import router as users_router
+from routers.activities import router as activities_router
 from routers.activities_dtest import router as activities_dtest_router
 from routers.registrations_dtest import router as registrations_dtest_router
+from routers.uploads import router as uploads_router
+from fastapi.staticfiles import StaticFiles
 
 # from apps.app01 import UserApp,RoleApp
 # from apps.app00 import app00
@@ -26,6 +29,7 @@ app = FastAPI(
         {"name": "用户", "description": "用户相关接口"},
         {"name": "活动", "description": "活动相关接口"},
         {"name": "报名", "description": "报名相关接口"},
+        {"name": "文件", "description": "文件相关接口"},
     ]
 )
 # app.include_router(app00,tags=["App01"])
@@ -55,11 +59,17 @@ async def MyCORSHandler(request: Request, call_next):
     return response
 
 # 引入所有路由
+
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(users_router)
+app.include_router(activities_router)
 app.include_router(activities_dtest_router)
 app.include_router(registrations_dtest_router)
+app.include_router(uploads_router)
+
+# 挂载静态文件目录以便直接访问上传的文件
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 register_tortoise(
     app,
