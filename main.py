@@ -8,6 +8,7 @@ from routers.admin import router as admin_router
 from routers.users import router as users_router
 from routers.activities import router as activities_router
 from routers.activities_dtest import router as activities_dtest_router
+from routers.registrations import router as registrations_router
 from routers.registrations_dtest import router as registrations_dtest_router
 from routers.uploads import router as uploads_router
 from fastapi.staticfiles import StaticFiles
@@ -65,6 +66,7 @@ app.include_router(admin_router)
 app.include_router(users_router)
 app.include_router(activities_router)
 app.include_router(activities_dtest_router)
+app.include_router(registrations_router)
 app.include_router(registrations_dtest_router)
 app.include_router(uploads_router)
 

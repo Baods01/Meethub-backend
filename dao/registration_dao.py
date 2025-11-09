@@ -110,7 +110,7 @@ class RegistrationDAO(BaseDAO[Registrations]):
         query = query.order_by('-registration_time')\
             .offset((page - 1) * page_size)\
             .limit(page_size)\
-            .prefetch_related('activity')
+            .prefetch_related('activity', 'activity__publisher', 'participant')
             
         registrations = await query
         
@@ -139,7 +139,11 @@ class RegistrationDAO(BaseDAO[Registrations]):
         query = query.order_by('-registration_time')\
             .offset((page - 1) * page_size)\
             .limit(page_size)\
-            .prefetch_related('participant')
+            .prefetch_related(
+                'participant',
+                'activity',
+                'activity__publisher'
+            )
             
         registrations = await query
         
