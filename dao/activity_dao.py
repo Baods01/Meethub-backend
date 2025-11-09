@@ -15,7 +15,9 @@ class ActivityDAO(BaseDAO[Activities]):
 
     async def create_activity(self, data: Dict, publisher_id: int) -> Activities:
         """创建活动"""
-        return await self.create(publisher_id=publisher_id, **data)
+        activity = await self.create(publisher_id=publisher_id, **data)
+        # 重新获取活动信息以包含发布者信息
+        return await self.model.get(id=activity.id).prefetch_related('publisher')
 
     async def get_activity_with_stats(self, activity_id: int) -> Optional[Activities]:
         """获取活动详情及统计信息"""

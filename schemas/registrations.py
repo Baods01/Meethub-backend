@@ -21,7 +21,7 @@ class RegistrationUpdate(BaseModel):
     status: Optional[str] = Field(
         None,
         description="报名状态",
-        regex="^(pending|approved|rejected|cancelled)$"
+        pattern="^(pending|approved|rejected|cancelled)$"
     )
     comment: Optional[str] = None
     additional_info: Optional[Dict] = None
@@ -52,7 +52,7 @@ class RegistrationInDB(RegistrationBase):
     activity: ActivityInDB
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RegistrationList(BaseModel):
@@ -79,12 +79,12 @@ class RegistrationSearch(BaseModel):
     activity_id: Optional[int] = None
     status: Optional[str] = Field(
         None,
-        regex="^(pending|approved|rejected|cancelled)$"
+        pattern="^(pending|approved|rejected|cancelled)$"
     )
     registration_time_range: Optional[Dict[str, datetime]] = None
     sort_by: Optional[str] = Field(
         None,
-        regex="^(registration_time|status|rating)$"
+        pattern="^(registration_time|status|rating)$"
     )
     page: int = Field(1, gt=0)
     page_size: int = Field(10, gt=0, le=100)

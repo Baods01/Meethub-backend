@@ -4,6 +4,17 @@ from datetime import datetime
 from .roles import RoleResponse
 
 
+class UserBasicInfo(BaseModel):
+    """用户基本信息（用于其他模型的嵌套）"""
+    id: int = Field(..., description="用户ID")
+    username: str = Field(..., description="用户名")
+    nickname: Optional[str] = Field(None, description="昵称")
+    avatar: Optional[str] = Field(None, description="头像URL")
+
+    class Config:
+        from_attributes = True
+
+
 class UserBase(BaseModel):
     """用户基础模型"""
     username: str = Field(..., min_length=3, max_length=50, description="用户名")

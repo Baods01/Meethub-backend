@@ -28,17 +28,20 @@ class RegistrationDAO(BaseDAO[Registrations]):
         if exists:
             return None
             
-        return await self.create(
+        registration = await self.create(
             activity_id=activity_id,
             participant_id=participant_id,
             **data
         )
+        
+        # 重新获取报名记录以包含关联数据
+        return await self.model.get(id=registration.id).prefetch_related('participant', 'activity__publisher')
 
     async def get_registration_detail(self, registration_id: int) -> Optional[Registrations]:
         """获取报名详情"""
         return await self.model.get_or_none(
             id=registration_id
-        ).prefetch_related('participant', 'activity')
+        ).prefetch_related('participant', 'activity', 'activity__publisher')
 
     async def update_registration_status(
         self, 

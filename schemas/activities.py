@@ -45,7 +45,7 @@ class ActivityUpdate(BaseModel):
     status: Optional[str] = Field(
         None,
         description="活动状态",
-        regex="^(draft|published|ongoing|ended|cancelled)$"
+        pattern="^(draft|published|ongoing|ended|cancelled)$"
     )
 
     @validator('end_time')
@@ -67,7 +67,7 @@ class ActivityInDB(ActivityBase):
     publisher: UserBasicInfo
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ActivityList(BaseModel):
@@ -95,7 +95,7 @@ class ActivitySearch(BaseModel):
     time_range: Optional[Dict[str, datetime]] = None
     sort_by: Optional[str] = Field(
         None,
-        regex="^(created_at|start_time|views_count|current_participants)$"
+        pattern="^(created_at|start_time|views_count|current_participants)$"
     )
     page: int = Field(1, gt=0)
     page_size: int = Field(10, gt=0, le=100)
