@@ -12,19 +12,38 @@ class ActivityBase(BaseModel):
     location: str = Field(default="华南农业大学", description="活动地点", max_length=255)
     start_time: datetime = Field(default="2025-11-20T00:37:32.249Z", description="活动开始时间")
     end_time: datetime = Field(default="2025-11-30T00:37:32.249Z", description="活动结束时间")
-    max_participants: int = Field(default= 100, description="招募人数上限", gt=0)
+    max_participants: int = Field(default=100, description="招募人数上限", gt=0)
     tags: List[str] = Field(default=[], description="活动标签")
     target_audience: Dict = Field(
         default={
-            "Targeted_people":["大一","大二"],
-            "Activity_class":["就业创业","学术调研"],
-            }, 
+            "Targeted_people": [
+                "大一",
+                "大二",
+                "大三",
+                "大四",
+                "研究生"
+            ],
+            "Activity_class": [
+                "就业创业",
+                "学术调研",
+                "文体艺术",
+                "志愿服务",
+                "社会实践",
+                "校园生活"
+            ]
+        }, 
         description="面向人群(专业/年级)"
-        )
+    )
     benefits: Dict = Field(
-        default={"benefit" : ["综测加分","志愿时","其他"]}, 
+        default={
+            "benefit": [
+                "综测加分",
+                "志愿时",
+                "其他"
+            ]
+        }, 
         description="活动收益(志愿时/综测等)"
-        )
+    )
 
     @validator('end_time')
     def validate_end_time(cls, v, values):
