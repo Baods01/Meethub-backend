@@ -71,9 +71,7 @@ async def create_registration(
             data=registration_data
         )
 
-        # 更新活动当前报名人数
-        await activity_dao.update_participants_count(registration.activity_id, increment=True)
-
+        # 不再在这里更新活动人数，而是在审核通过时更新
         return created_registration
 
     except HTTPException as he:

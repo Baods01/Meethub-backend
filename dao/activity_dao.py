@@ -72,13 +72,14 @@ class ActivityDAO(BaseDAO[Activities]):
 
         # 收益类型筛选
         if benefits:
-            for benefit in benefits:
-                query = query.filter(benefits__contains=benefit)
+            query = query.filter(benefits__contains={"benefit": benefits})
 
         # 目标受众筛选
         if audience:
             for key, value in audience.items():
-                query = query.filter(target_audience__contains={key: value})
+                if isinstance(value, list):
+                    # 如果value是列表，检查目标受众中是否包含这些值
+                    query = query.filter(target_audience__contains={key: value})
 
         # 活动类型筛选
         if categories:
@@ -91,10 +92,17 @@ class ActivityDAO(BaseDAO[Activities]):
             if end_time := time_range.get('end'):
                 query = query.filter(end_time__lte=end_time)
 
+        # 统计总数（在排序之前）
+        total = await query.count()
+
         # 排序
         if sort_by:
-            order_by = '-' + sort_by if sort_by.startswith('-') else sort_by
-            query = query.order_by(order_by)
+            # 处理降序排序（以'-'开头的字段）
+            if sort_by.startswith('-'):
+                field = sort_by[1:]
+                query = query.order_by(f"-{field}")
+            else:
+                query = query.order_by(sort_by)
         else:
             query = query.order_by('-created_at')
 

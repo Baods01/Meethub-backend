@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from datetime import datetime, timedelta
 from schemas.activities import (
-    ActivityCreate, ActivityInDB, ActivityStats, ActivityUpdate
+    ActivityCreate, ActivityInDB, ActivityStats, ActivityUpdate,
+    ActivityList, ActivitySearch
 )
 from dao.activity_dao import ActivityDAO
 from core.permission_checker import requires_permissions
 from core.middleware.auth_middleware import JWTAuthMiddleware
 from core.permissions import ACTIVITY_UPDATE, ACTIVITY_DELETE
 from fastapi.security import HTTPBearer
-from typing import List, Dict
+from typing import List, Dict, Optional
+from tortoise.expressions import Q
 
 router = APIRouter(
     prefix="/activities",
@@ -16,6 +19,87 @@ router = APIRouter(
 )
 
 activity_dao = ActivityDAO()
+
+@router.get(
+    "/search",
+    response_model=ActivityList,
+    status_code=status.HTTP_200_OK,
+    dependencies=[requires_permissions(["activity:read"])]
+)
+async def search_activities(
+    request: Request,
+    keyword: Optional[str] = None,
+    benefits: Optional[List[str]] = Query(None),
+    time_range: str = Query(None, regex="^(this_week|two_weeks|one_month)$"),
+    targeted_people: Optional[List[str]] = Query(None),
+    activity_class: Optional[List[str]] = Query(None),
+    sort_by: Optional[str] = Query(
+        None,
+        description="排序字段：前缀'-'表示倒序",
+        regex="^(-?created_at|-?views_count|-?current_participants|-?start_time)$"
+    ),
+    page: int = Query(1, gt=0),
+    page_size: int = Query(10, gt=0, le=100)
+):
+    """
+    搜索活动
+    - 支持多条件组合查询
+    - 支持分页
+    - 支持排序
+
+    时间范围选项:
+    - this_week: 本周内
+    - two_weeks: 两周内
+    - one_month: 一个月内
+
+    排序选项（前缀'-'表示倒序）:
+    - created_at/-created_at: 按创建时间排序
+    - views_count/-views_count: 按浏览量排序
+    - current_participants/-current_participants: 按当前参与人数排序
+    - start_time/-start_time: 按开始时间排序
+    """
+    try:
+        # 处理时间范围
+        now = datetime.now()
+        time_filter = None
+        if time_range:
+            if time_range == "this_week":
+                time_filter = {"start": now - timedelta(days=now.weekday()), "end": now + timedelta(days=6-now.weekday())}
+            elif time_range == "two_weeks":
+                time_filter = {"start": now - timedelta(weeks=2), "end": now}
+            elif time_range == "one_month":
+                time_filter = {"start": now - timedelta(days=30), "end": now}
+
+        # 构建受众群体筛选条件
+        audience = {}
+        if targeted_people:
+            audience["Targeted_people"] = targeted_people
+        if activity_class:
+            audience["Activity_class"] = activity_class
+
+        # 执行搜索
+        result = await activity_dao.search_activities(
+            keyword=keyword,
+            benefits=benefits,
+            audience=audience if audience else None,
+            time_range=time_filter,
+            sort_by=sort_by,
+            page=page,
+            page_size=page_size
+        )
+
+        return ActivityList(
+            total=result["total"],
+            items=result["items"],
+            page=result["page"],
+            page_size=result["page_size"]
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"搜索活动失败: {str(e)}"
+        )
 
 @router.post(
     "/",
@@ -48,6 +132,88 @@ async def create_activity(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"创建活动失败: {str(e)}"
+        )
+
+@router.get(
+    "/search",
+    response_model=ActivityList,
+    status_code=status.HTTP_200_OK,
+    dependencies=[requires_permissions(["activity:read"])]
+)
+async def search_activities(
+    request: Request,
+    keyword: Optional[str] = None,
+    benefits: Optional[List[str]] = Query(None),
+    time_range: str = Query(None, regex="^(this_week|two_weeks|one_month)$"),
+    targeted_people: Optional[List[str]] = Query(None),
+    activity_class: Optional[List[str]] = Query(None),
+    sort_by: Optional[str] = Query(
+        None, 
+        regex="^(-?created_at|-?views_count|-?current_participants)$"
+    ),
+    page: int = Query(1, gt=0),
+    page_size: int = Query(10, gt=0, le=100)
+):
+    """
+    搜索活动
+    - 支持多条件组合查询
+    - 支持分页
+    - 支持排序
+
+    时间范围选项:
+    - this_week: 本周内
+    - two_weeks: 两周内
+    - one_month: 一个月内
+
+    排序选项:
+    - created_at: 按创建时间排序
+    - -created_at: 按创建时间倒序
+    - views_count: 按浏览量排序
+    - -views_count: 按浏览量倒序
+    - current_participants: 按当前参与人数排序
+    - -current_participants: 按当前参与人数倒序
+    """
+    try:
+        # 处理时间范围
+        now = datetime.now()
+        time_filter = None
+        if time_range:
+            if time_range == "this_week":
+                time_filter = {"start": now - timedelta(days=now.weekday()), "end": now + timedelta(days=6-now.weekday())}
+            elif time_range == "two_weeks":
+                time_filter = {"start": now - timedelta(weeks=2), "end": now}
+            elif time_range == "one_month":
+                time_filter = {"start": now - timedelta(days=30), "end": now}
+
+        # 构建受众群体筛选条件
+        audience = {}
+        if targeted_people:
+            audience["Targeted_people"] = targeted_people
+        if activity_class:
+            audience["Activity_class"] = activity_class
+
+        # 执行搜索
+        result = await activity_dao.search_activities(
+            keyword=keyword,
+            benefits=benefits,
+            audience=audience if audience else None,
+            time_range=time_filter,
+            sort_by=sort_by,
+            page=page,
+            page_size=page_size
+        )
+
+        return ActivityList(
+            total=result["total"],
+            items=result["items"],
+            page=result["page"],
+            page_size=result["page_size"]
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"搜索活动失败: {str(e)}"
         )
 
 @router.get(
