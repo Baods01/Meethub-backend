@@ -27,9 +27,10 @@ class UserBase(BaseModel):
         description="用户个性属性",
         example={
             "college": "计算机学院",
-            "grade": "2023",
             "major": "软件工程",
-            "skills": ["Python", "JavaScript"]
+            "hobby": ["篮球", "编程", "音乐"],
+            "gender": "male",
+            "grade": "2023级"
         }
     )
     avatar: Optional[str] = Field(None, description="头像URL")
@@ -73,9 +74,10 @@ class UserProfileUpdate(BaseModel):
         description="用户个性属性",
         example={
             "college": "计算机学院",
-            "grade": "2023",
             "major": "软件工程",
-            "skills": ["Python", "JavaScript"]
+            "hobby": ["篮球", "编程", "音乐"],
+            "gender": "male",
+            "grade": "2023级"
         }
     )
 
@@ -88,9 +90,10 @@ class UserBasicUpdate(BaseModel):
         description="用户个性属性",
         example={
             "college": "计算机学院",
-            "grade": "2023",
             "major": "软件工程",
-            "skills": ["Python", "JavaScript"]
+            "hobby": ["篮球", "编程", "音乐"],
+            "gender": "male",
+            "grade": "2023级"
         }
     )
     avatar: Optional[str] = Field(None, description="头像URL")
