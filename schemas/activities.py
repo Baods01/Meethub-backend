@@ -6,16 +6,25 @@ from .users import UserBasicInfo
 
 class ActivityBase(BaseModel):
     """活动基础模式"""
-    title: str = Field(..., description="活动名称", min_length=1, max_length=100)
-    description: str = Field(..., description="活动简介")
-    cover_image: str = Field(..., description="封面图片URL", max_length=255)
-    location: str = Field(..., description="活动地点", max_length=255)
-    start_time: datetime = Field(..., description="活动开始时间")
-    end_time: datetime = Field(..., description="活动结束时间")
-    max_participants: int = Field(..., description="招募人数上限", gt=0)
+    title: str = Field(default="华南农业大学活动", description="活动名称", min_length=1, max_length=100)
+    description: str = Field(default="这是一个华南农业大学的活动", description="活动简介")
+    cover_image: str = Field(default=None, description="封面图片URL", max_length=255)
+    location: str = Field(default="华南农业大学", description="活动地点", max_length=255)
+    start_time: datetime = Field(default="2025-11-20T00:37:32.249Z", description="活动开始时间")
+    end_time: datetime = Field(default="2025-11-30T00:37:32.249Z", description="活动结束时间")
+    max_participants: int = Field(default= 100, description="招募人数上限", gt=0)
     tags: List[str] = Field(default=[], description="活动标签")
-    target_audience: Dict = Field(default={}, description="面向人群(专业/年级)")
-    benefits: Dict = Field(default={}, description="活动收益(志愿时/综测等)")
+    target_audience: Dict = Field(
+        default={
+            "Targeted_people":["大一","大二"],
+            "Activity_class":["就业创业","学术调研"],
+            }, 
+        description="面向人群(专业/年级)"
+        )
+    benefits: Dict = Field(
+        default={"benefit" : ["综测加分","志愿时","其他"]}, 
+        description="活动收益(志愿时/综测等)"
+        )
 
     @validator('end_time')
     def validate_end_time(cls, v, values):
