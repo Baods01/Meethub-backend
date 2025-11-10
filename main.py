@@ -11,13 +11,6 @@ from routers.registrations import router as registrations_router
 from routers.uploads import router as uploads_router
 from fastapi.staticfiles import StaticFiles
 
-# from apps.app01 import UserApp,RoleApp
-# from apps.app00 import app00
-# from apps.user_dtest import UserDTestApp
-# from apps.roles_dtest import RoleDTestApp
-# from apps.auth import router as AuthRouter
-# from apps.app02 import router as TestAuthRouter
-
 app = FastAPI(
     title="Meethub API",
     description="Meethub 后端 API 文档",
@@ -31,13 +24,6 @@ app = FastAPI(
         {"name": "文件", "description": "文件相关接口"},
     ]
 )
-# app.include_router(app00,tags=["App01"])
-# app.include_router(UserApp,tags=["UserApp"])
-# app.include_router(RoleApp,tags=["RoleApp"])
-# app.include_router(UserDTestApp,tags=["UserDTestApp"])
-# app.include_router(RoleDTestApp,tags=["RoleDTestApp"],prefix='/roledtest')
-# app.include_router(AuthRouter)
-# app.include_router(TestAuthRouter)
 
 @app.middleware("http")
 async def MyCORSHandler(request: Request, call_next):
