@@ -83,8 +83,12 @@ async def upload_activity_cover(
             detail=f"保存文件时出错: {str(e)}"
         )
 
-    # 更新活动的 cover_image 字段为保存后的文件名
-    updated = await activity_dao.update(activity_id, cover_image=filename)
+    # 构建完整的 cover_image URL
+    base_url = f"http://{request.client.host}:{request.url.port}" if request.url.port else f"http://{request.client.host}"
+    cover_image_url = f"{base_url}/static/img/TopActivities/{filename}"
+    
+    # 更新活动的 cover_image 字段为完整的 URL
+    updated = await activity_dao.update(activity_id, cover_image=cover_image_url)
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
