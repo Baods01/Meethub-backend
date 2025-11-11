@@ -21,6 +21,54 @@ router = APIRouter(
 activity_dao = ActivityDAO()
 
 @router.get(
+    "/organizer/my-activities",
+    response_model=ActivityList,
+    status_code=status.HTTP_200_OK,
+    dependencies=[requires_permissions(["activity:list"])]
+)
+async def get_organizer_activities(
+    request: Request,
+    page: int = Query(1, gt=0),
+    page_size: int = Query(10, gt=0, le=100)
+):
+    """
+    获取组织者的活动列表
+    - 需要活动列表查看权限
+    - 返回当前用户发布的所有活动详细信息
+    - 支持分页
+    
+    此接口用于活动组织者查看自己发布的所有活动，包括草稿、已发布、进行中、已结束等所有状态的活动。
+    """
+    try:
+        # 从请求状态中获取当前用户（组织者）信息
+        organizer_id = request.state.user.id
+        
+        # 查询该用户发布的所有活动
+        from models.activities import Activities
+        query = Activities.filter(publisher_id=organizer_id, is_deleted=False)
+        
+        # 统计总数
+        total = await query.count()
+        
+        # 分页和排序
+        activities = await query.order_by('-created_at')\
+            .offset((page - 1) * page_size)\
+            .limit(page_size)\
+            .prefetch_related('publisher')
+        
+        return ActivityList(
+            total=total,
+            items=activities,
+            page=page,
+            page_size=page_size
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取组织者活动列表失败: {str(e)}"
+        )
+
+@router.get(
     "/search",
     response_model=ActivityList,
     status_code=status.HTTP_200_OK,

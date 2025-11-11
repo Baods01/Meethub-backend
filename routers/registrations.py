@@ -295,3 +295,89 @@ async def update_registration_status(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"更新报名状态失败: {str(e)}"
         )
+
+@router.post(
+    "/{registration_id}/cancel",
+    response_model=Dict,
+    status_code=http_status.HTTP_200_OK
+)
+async def cancel_registration(
+    registration_id: int,
+    request: Request
+):
+    """
+    用户取消个人报名
+    - 需要登录用户
+    - 验证用户是否为该报名的报名者
+    - 验证通过后，将报名状态更改为取消状态
+    - 返回取消后的报名详细信息
+    
+    此接口允许用户取消自己的报名，支持以下状态的报名取消：
+    - pending: 待审核状态可以取消
+    - approved: 已通过状态可以取消
+    
+    不支持取消的状态：
+    - rejected: 已拒绝状态
+    - cancelled: 已取消状态（重复取消）
+    """
+    try:
+        # 获取当前用户ID
+        current_user_id = request.state.user.id
+        
+        # 获取报名详情
+        registration = await registration_dao.get_registration_detail(registration_id)
+        if not registration:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="报名记录不存在"
+            )
+        
+        # 验证用户是否为该报名的报名者
+        if registration.participant.id != current_user_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="只能取消自己的报名"
+            )
+        
+        # 验证报名状态是否可以取消
+        current_status = registration.status
+        if current_status == "cancelled":
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="报名已经处于取消状态"
+            )
+        elif current_status == "rejected":
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="已拒绝的报名不能取消"
+            )
+        
+        # 更新报名状态为取消
+        updated_registration = await registration_dao.update_registration_status(
+            registration_id=registration_id,
+            status="cancelled",
+            activity_id=registration.activity.id
+        )
+        
+        if not updated_registration:
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="取消报名失败"
+            )
+        
+        # 重新获取完整的报名信息
+        updated_registration = await registration_dao.get_registration_detail(registration_id)
+        
+        return {
+            "success": True,
+            "message": "报名已成功取消",
+            "registration": RegistrationInDB.from_orm(updated_registration).model_dump()
+        }
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"取消报名失败: {str(e)}"
+        )
