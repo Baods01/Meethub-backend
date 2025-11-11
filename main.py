@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, Request, Response
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
@@ -25,23 +26,18 @@ app = FastAPI(
     ]
 )
 
-@app.middleware("http")
-async def MyCORSHandler(request: Request, call_next):
-    """
-    自定义CORS中间件，处理跨域请求
-    """
-    if request.method == "OPTIONS":
-        # 处理预检请求
-        response = Response()
-    else:
-        response = await call_next(request)
-    
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    response.headers["Access-Control-Max-Age"] = "3600"  # 预检请求缓存时间
-    
-    return response
+# 配置CORS中间件
+# 这个中间件能够正确处理预检请求，并对所有路由（包括静态文件）应用CORS头
+# 可以让分离部署的网站访问后端的静态文件和API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有源（生产环境应该限制具体的域名）
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],  # 暴露所有响应头
+    max_age=3600,  # 预检请求缓存时间（秒）
+)
 
 # 引入所有路由
 
