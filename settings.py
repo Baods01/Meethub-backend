@@ -17,7 +17,14 @@ TORTOISE_ORM = {
             },
             'apps': {
                 'models': {
-                    'models': ['models.users','models.roles','aerich.models','models.activities','models.registrations'],
+                    'models': [
+                        'models.users',
+                        'models.roles',
+                        'aerich.models',
+                        'models.activities',
+                        'models.registrations',
+                        'models.user_logs'
+                        ],
                     'default_connection': 'default',
                 }
             },
