@@ -12,6 +12,7 @@ from dao.registration_dao import RegistrationDAO
 from dao.activity_dao import ActivityDAO
 from core.permission_checker import requires_permissions
 from core.middleware.auth_middleware import JWTAuthMiddleware
+from core.middleware.logging_middleware import operation_logger
 from core.permissions import ENROLLMENT_APPROVE
 from typing import List, Dict
 
@@ -38,6 +39,7 @@ async def create_registration(
     - 需要登录用户
     - 验证活动状态和报名条件
     - 创建报名记录
+    - 记录用户报名的操作日志
     """
     try:
         # 获取当前用户信息
@@ -70,6 +72,10 @@ async def create_registration(
             participant_id=participant_id,
             data=registration_data
         )
+
+        # 记录用户报名活动的操作日志
+        if hasattr(request.state, 'user') and request.state.user:
+            await operation_logger.log_activity_registration(request, registration.activity_id)
 
         # 不再在这里更新活动人数，而是在审核通过时更新
         return created_registration

@@ -7,6 +7,7 @@ from schemas.activities import (
 from dao.activity_dao import ActivityDAO
 from core.permission_checker import requires_permissions
 from core.middleware.auth_middleware import JWTAuthMiddleware
+from core.middleware.logging_middleware import operation_logger
 from core.permissions import ACTIVITY_UPDATE, ACTIVITY_DELETE
 from fastapi.security import HTTPBearer
 from typing import List, Dict, Optional
@@ -195,6 +196,7 @@ async def get_activity_details(
     获取活动详情
     - 任何已登录用户可访问
     - 返回活动详细信息和统计数据
+    - 记录用户浏览活动的操作日志
     """
     try:
         # 获取活动详情
@@ -207,6 +209,10 @@ async def get_activity_details(
 
         # 增加浏览量
         await activity_dao.increment_views(activity_id)
+
+        # 记录用户浏览活动的操作日志
+        if hasattr(request.state, 'user') and request.state.user:
+            await operation_logger.log_activity_view(request, activity_id)
 
         # 获取活动统计信息
         stats = await activity_dao.get_activity_stats(activity_id)
