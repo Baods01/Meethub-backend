@@ -196,6 +196,7 @@ async def get_activity_details(
     获取活动详情
     - 任何已登录用户可访问
     - 返回活动详细信息和统计数据
+    - 浏览量自动+1
     - 记录用户浏览活动的操作日志
     """
     try:
@@ -209,6 +210,8 @@ async def get_activity_details(
 
         # 增加浏览量
         await activity_dao.increment_views(activity_id)
+        # 更新内存中的活动对象的浏览量
+        activity.views_count += 1
 
         # 记录用户浏览活动的操作日志
         if hasattr(request.state, 'user') and request.state.user:

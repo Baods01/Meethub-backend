@@ -24,7 +24,7 @@ app = FastAPI(
         {"name": "活动", "description": "活动相关接口"},
         {"name": "报名", "description": "报名相关接口"},
         {"name": "文件", "description": "文件相关接口"},
-        {"name": "用户日志", "description": "用户操作日志相关接口"},
+        {"name": "日志", "description": "用户操作日志相关接口"},
     ]
 )
 
