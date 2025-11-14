@@ -118,8 +118,8 @@ async def register(user: UserCreate):
                 detail="用户创建失败"
             )
             
-        # 分配普通用户角色（角色ID为11）
-        role_added = await user_dao.add_user_role(created_user.id, 11)
+        # 分配普通用户角色（角色ID为3）
+        role_added = await user_dao.add_user_role(created_user.id, 3)
         if not role_added:
             # 如果角色分配失败，记录错误但不影响用户创建
             print(f"警告：无法为用户 {created_user.username} 分配普通用户角色")
@@ -136,12 +136,22 @@ async def register(user: UserCreate):
             "nickname": created_user.nickname,
             "bio": created_user.bio,
             "avatar": created_user.avatar,
+            "profile_attributes": created_user.profile_attributes,
             "is_active": created_user.is_active,
             "is_verified": created_user.is_verified,
             "created_at": created_user.created_at,
             "updated_at": created_user.updated_at,
             "last_login": created_user.last_login,
-            "roles": user_roles
+            "roles": [{
+                "id": role.id,
+                "name": role.name,
+                "code": role.code,
+                "description": role.description,
+                "permissions": role.permissions,
+                "is_active": role.is_active,
+                "created_at": role.created_at,
+                "updated_at": role.updated_at
+            } for role in user_roles]
         }
         
         return response_data
@@ -185,12 +195,22 @@ async def get_current_user(
             "nickname": user.nickname,
             "bio": user.bio,
             "avatar": user.avatar,
+            "profile_attributes": user.profile_attributes,
             "is_active": user.is_active,
             "is_verified": user.is_verified,
             "created_at": user.created_at,
             "updated_at": user.updated_at,
             "last_login": user.last_login,
-            "roles": user_roles
+            "roles": [{
+                "id": role.id,
+                "name": role.name,
+                "code": role.code,
+                "description": role.description,
+                "permissions": role.permissions,
+                "is_active": role.is_active,
+                "created_at": role.created_at,
+                "updated_at": role.updated_at
+            } for role in user_roles]
         }
         
         return response_data

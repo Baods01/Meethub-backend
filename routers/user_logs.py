@@ -16,7 +16,7 @@ from typing import Optional
 
 router = APIRouter(
     prefix="/user-logs",
-    tags=["用户日志"],
+    tags=["日志"],
     dependencies=[Depends(JWTAuthMiddleware())]
 )
 

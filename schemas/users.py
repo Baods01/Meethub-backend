@@ -30,7 +30,7 @@ class UserBase(BaseModel):
             "major": "软件工程",
             "hobby": ["篮球", "编程", "音乐"],
             "gender": "male",
-            "grade": "2023级"
+            "grade": "大一"
         }
     )
     avatar: Optional[str] = Field(None, description="头像URL")
