@@ -12,13 +12,13 @@
 在项目目录下的终端中，使用以下命令创建虚拟环境：
 
 ```bash
-python -m venv <环境名>
+python -m venv MeethubEnv
 ```
 
 或
 
 ```bash
-python3 -m venv <环境名>
+python3 -m venv MeethubEnv
 ```
 
 ### 2. 激活虚拟环境
@@ -26,7 +26,7 @@ python3 -m venv <环境名>
 在终端中使用以下命令激活虚拟环境：
 
 ```bash
-<环境名>\Scripts\activate
+MeethubEnv\Scripts\activate
 ```
 
 ### 3. 安装项目依赖
@@ -68,3 +68,5 @@ python main.py
 ```
 
 后端服务将在 `127.0.0.1:8080` 地址上运行。
+
+建议访问 `http://127.0.0.1:8080/docs` 以获取接口swagger文档
