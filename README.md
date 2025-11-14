@@ -43,7 +43,7 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
-> **注意**：安装新的依赖时，请在 `requirements.txt` 文件中添加依赖名称，然后通过 `requirements.txt` 来安装依赖。
+
 
 ### 4. 配置数据库
 
