@@ -70,3 +70,9 @@ python main.py
 后端服务将在 `127.0.0.1:8080` 地址上运行。
 
 建议访问 `http://127.0.0.1:8080/docs` 以获取接口swagger文档
+
+## 预设的超级管理员账户
+```bash
+username:admin
+password:12345678
+```

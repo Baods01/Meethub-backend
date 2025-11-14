@@ -6,7 +6,7 @@ TORTOISE_ORM = {
                         'host': '127.0.0.1',
                         'port': '3306',
                         'user':'root',
-                        'password':'baods1433573081',
+                        'password':'123456',
                         'database':'meethub_db',
                         'minsize': 1,
                         'maxsize': 5,
