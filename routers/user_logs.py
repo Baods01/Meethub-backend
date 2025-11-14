@@ -228,3 +228,53 @@ async def delete_logs_batch(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"批量删除日志失败: {str(e)}"
         )
+
+
+@router.get(
+    "/my/history",
+    response_model=UserOperationLogList,
+    status_code=status.HTTP_200_OK
+)
+async def get_current_user_view_history(
+    request: Request,
+    page: int = Query(1, gt=0, description="页码"),
+    page_size: int = Query(10, gt=0, le=100, description="每页数量"),
+    sort_by: Optional[str] = Query(
+        "-created_at",
+        description="排序字段：前缀'-'表示倒序",
+        regex="^(-?created_at)$"
+    )
+):
+    """
+    获取当前用户的历史浏览记录
+    - 需要登录用户（已通过JWT认证）
+    - 返回用户浏览过的活动列表，按浏览时间排序
+    - 支持分页
+    """
+    try:
+        # 从请求状态中获取当前用户
+        user = request.state.user
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户信息未找到，请重新登录"
+            )
+        
+        # 调用DAO获取用户的浏览记录（仅view_activity操作）
+        result = await user_logs_dao.search_logs(
+            user_id=user.id,
+            operation_type="view_activity",
+            sort_by=sort_by,
+            page=page,
+            page_size=page_size
+        )
+        
+        return result
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取历史浏览记录失败: {str(e)}"
+        )
