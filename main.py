@@ -11,6 +11,7 @@ from routers.activities import router as activities_router
 from routers.registrations import router as registrations_router
 from routers.uploads import router as uploads_router
 from routers.user_logs import router as user_logs_router
+from routers.recommendations import router as recommendations_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
@@ -50,6 +51,7 @@ app.include_router(activities_router)
 app.include_router(registrations_router)
 app.include_router(uploads_router)
 app.include_router(user_logs_router)
+app.include_router(recommendations_router)
 
 # 挂载静态文件目录以便直接访问上传的文件
 app.mount("/static", StaticFiles(directory="static"), name="static")
