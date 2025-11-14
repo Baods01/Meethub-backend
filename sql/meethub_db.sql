@@ -11,7 +11,7 @@
  Target Server Version : 80042
  File Encoding         : 65001
 
- Date: 14/11/2025 13:29:37
+ Date: 14/11/2025 14:52:54
 */
 
 SET NAMES utf8mb4;
@@ -4312,6 +4312,7 @@ CREATE TABLE `user_roles`  (
 -- ----------------------------
 -- Records of user_roles
 -- ----------------------------
+INSERT INTO `user_roles` VALUES (1002, 1);
 INSERT INTO `user_roles` VALUES (501, 2);
 INSERT INTO `user_roles` VALUES (502, 2);
 INSERT INTO `user_roles` VALUES (503, 2);
@@ -4836,7 +4837,7 @@ CREATE TABLE `users`  (
   UNIQUE INDEX `username`(`username` ASC) USING BTREE,
   UNIQUE INDEX `email`(`email` ASC) USING BTREE,
   UNIQUE INDEX `phone`(`phone` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1001 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1003 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of users
@@ -5341,5 +5342,6 @@ INSERT INTO `users` VALUES (997, '雷旭', '$2b$12$lmOY3thYuZsqevwGcGGBOulBMuuLU
 INSERT INTO `users` VALUES (998, '张伟', '$2b$12$6tJ1ghQDtodjfgh2jbsw6uN9glLzysjkP9xQqxpy1sqHcVPuLdBKa', 'gnewman@example.com', '18939304663', NULL, NULL, '华南农业大学学生', '{\"grade\": \"大四\", \"hobby\": [\"乒乓球\"], \"major\": \"哲学\", \"gender\": \"female\", \"college\": \"人文学院\"}', 1, 1, '2025-11-14 13:24:31.958191', '2025-11-14 13:24:31.958191', NULL);
 INSERT INTO `users` VALUES (999, '陈勇', '$2b$12$WeMkykGqEiWlFnyJx6OGN.wHuXhWKbHx9X2r9vQFdApXwsowov5xK', 'zgarza@example.org', '17727575102', NULL, NULL, '华南农业大学学生', '{\"grade\": \"大一\", \"hobby\": [\"健身\"], \"major\": \"计算机科学与技术\", \"gender\": \"female\", \"college\": \"计算机学院\"}', 1, 1, '2025-11-14 13:24:32.348296', '2025-11-14 13:24:32.348296', NULL);
 INSERT INTO `users` VALUES (1000, '夏明', '$2b$12$mICPMlYJvyTH.fb7bg88oea2v5G9GaW2AaJ3RdrfV7UYhZTScBZ6C', 'angela97@example.org', '10986327152', NULL, NULL, '华南农业大学学生', '{\"grade\": \"大四\", \"hobby\": [\"羽毛球\"], \"major\": \"金融学\", \"gender\": \"female\", \"college\": \"经济管理学院\"}', 1, 1, '2025-11-14 13:24:32.751806', '2025-11-14 13:24:32.751806', NULL);
+INSERT INTO `users` VALUES (1002, 'Baods', '$2b$12$CD4ynbefx1oLFW2aJAIp1Of/ng6E2b/k74Ugz3OyJgF/2JEjudOlm', 'baods@163.com', '13352637956', 'string', 'string', '华南农业大学学生', '{\"grade\": \"大二\", \"hobby\": [\"编程\"], \"major\": \"软件工程\", \"gender\": \"male\", \"college\": \"计算机学院\"}', 1, 0, '2025-11-14 14:46:47.791819', '2025-11-14 14:46:47.791819', NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
