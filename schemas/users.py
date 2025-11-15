@@ -17,7 +17,7 @@ class UserBasicInfo(BaseModel):
 
 class UserBase(BaseModel):
     """用户基础模型"""
-    username: str = Field(..., min_length=3, max_length=50, description="用户名")
+    username: str = Field(..., min_length=1, max_length=50, description="用户名")
     email: Optional[str] = Field(None, description="邮箱")
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$", description="手机号")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
@@ -51,7 +51,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """更新用户请求模型"""
-    username: Optional[str] = Field(None, min_length=3, max_length=50, description="用户名")
+    username: Optional[str] = Field(None, min_length=1, max_length=50, description="用户名")
     email: Optional[str] = Field(None, description="邮箱")
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$", description="手机号")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
