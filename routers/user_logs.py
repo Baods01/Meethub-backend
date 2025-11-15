@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
 from schemas.user_logs import (
     UserOperationLogInDB,
     UserOperationLogList,
-    UserOperationLogSearch
+    UserOperationLogSearch,
+    UserOperationLogWithActivityList
 )
 from dao.user_logs_dao import UserOperationLogsDAO
 from core.middleware.auth_middleware import JWTAuthMiddleware
@@ -232,7 +233,7 @@ async def delete_logs_batch(
 
 @router.get(
     "/my/history",
-    response_model=UserOperationLogList,
+    response_model=UserOperationLogWithActivityList,
     status_code=status.HTTP_200_OK
 )
 async def get_current_user_view_history(
@@ -246,9 +247,9 @@ async def get_current_user_view_history(
     )
 ):
     """
-    获取当前用户的历史浏览记录
+    获取当前用户的历史浏览记录（含活动详细信息）
     - 需要登录用户（已通过JWT认证）
-    - 返回用户浏览过的活动列表，按浏览时间排序
+    - 返回用户浏览过的活动列表及详细信息，按浏览时间排序
     - 支持分页
     """
     try:
@@ -260,8 +261,8 @@ async def get_current_user_view_history(
                 detail="用户信息未找到，请重新登录"
             )
         
-        # 调用DAO获取用户的浏览记录（仅view_activity操作）
-        result = await user_logs_dao.search_logs(
+        # 调用DAO获取用户的浏览记录（仅view_activity操作），包含活动详细信息
+        logs = await user_logs_dao.search_logs_with_activity(
             user_id=user.id,
             operation_type="view_activity",
             sort_by=sort_by,
@@ -269,7 +270,18 @@ async def get_current_user_view_history(
             page_size=page_size
         )
         
-        return result
+        # 获取总数
+        total_logs = await user_logs_dao.model.filter(
+            user_id=user.id,
+            operation_type="view_activity"
+        ).count()
+        
+        return UserOperationLogWithActivityList(
+            total=total_logs,
+            items=logs,
+            page=page,
+            page_size=page_size
+        )
         
     except HTTPException as he:
         raise he

@@ -415,3 +415,66 @@ class UserOperationLogsDAO(BaseDAO):
         ).first()
         
         return log is not None
+
+    async def search_logs_with_activity(
+        self,
+        user_id: Optional[int] = None,
+        activity_id: Optional[int] = None,
+        operation_type: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        sort_by: Optional[str] = "-created_at",
+        page: int = 1,
+        page_size: int = 10
+    ) -> List:
+        """
+        多条件搜索日志并包含活动详细信息
+        
+        Args:
+            user_id: 用户ID（可选）
+            activity_id: 活动ID（可选）
+            operation_type: 操作类型（可选）
+            start_time: 开始时间（可选）
+            end_time: 结束时间（可选）
+            sort_by: 排序方式，支持 -created_at（倒序）或 created_at（正序）
+            page: 页码
+            page_size: 每页数量
+        
+        Returns:
+            包含活动详细信息的日志列表
+        """
+        query = self.model.all()
+        
+        # 构建查询条件
+        filters = {}
+        if user_id:
+            filters['user_id'] = user_id
+        if activity_id:
+            filters['activity_id'] = activity_id
+        if operation_type:
+            filters['operation_type'] = operation_type
+        
+        if filters:
+            query = query.filter(**filters)
+        
+        # 时间范围
+        if start_time and end_time:
+            query = query.filter(
+                created_at__gte=start_time,
+                created_at__lte=end_time
+            )
+        elif start_time:
+            query = query.filter(created_at__gte=start_time)
+        elif end_time:
+            query = query.filter(created_at__lte=end_time)
+        
+        # 排序
+        if sort_by and sort_by.startswith('-'):
+            query = query.order_by(sort_by)
+        else:
+            query = query.order_by(sort_by or '-created_at')
+        
+        # 预加载活动和发布者信息
+        logs = await query.offset((page - 1) * page_size).limit(page_size).prefetch_related('activity', 'activity__publisher')
+        
+        return logs

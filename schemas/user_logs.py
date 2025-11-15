@@ -63,10 +63,28 @@ class UserOperationLogDetail(UserOperationLogBase):
         from_attributes = True
 
 
+class UserOperationLogWithActivity(UserOperationLogBase):
+    """用户操作日志详细模式（包含活动信息）"""
+    id: int
+    created_at: datetime
+    activity: ActivityInDB = Field(..., description="关联活动详细信息")
+
+    class Config:
+        from_attributes = True
+
+
 class UserOperationLogList(BaseModel):
     """用户操作日志列表模式"""
     total: int = Field(..., description="总条数")
     items: List[UserOperationLogInDB] = Field(..., description="日志列表")
+    page: int = Field(..., description="当前页码")
+    page_size: int = Field(..., description="每页数量")
+
+
+class UserOperationLogWithActivityList(BaseModel):
+    """用户操作日志列表模式（包含活动详细信息）"""
+    total: int = Field(..., description="总条数")
+    items: List[UserOperationLogWithActivity] = Field(..., description="日志列表")
     page: int = Field(..., description="当前页码")
     page_size: int = Field(..., description="每页数量")
 
