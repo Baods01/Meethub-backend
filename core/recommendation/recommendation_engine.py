@@ -124,13 +124,13 @@ class RecommendationEngine:
         Returns:
             过滤后的活动列表，每个活动包含content_match_score
         """
-        # 获取用户已参与的活动（排除）
+        # 获取用户已参与的活动（用于降权，不再排除）
         user_viewed = await self.dao.get_user_viewed_activities(user_id)
         user_registered = await self.dao.get_user_registered_activities(user_id)
-        excluded_ids = list(set(user_viewed + user_registered))
+        viewed_or_registered_ids = set(user_viewed + user_registered)
         
-        # 获取所有可推荐的活动
-        all_activities = await self.dao.get_all_recommendable_activities(excluded_ids)
+        # 获取所有可推荐的活动（不再排除已浏览的活动）
+        all_activities = await self.dao.get_all_recommendable_activities(None)
         
         if not all_activities:
             return []
@@ -147,9 +147,14 @@ class RecommendationEngine:
             
             # 只保留超过阈值的活动
             if content_match >= (match_threshold * 100):
+                # 对已浏览/已报名的活动进行降权（降低50%）
+                is_viewed_or_registered = activity.id in viewed_or_registered_ids
+                adjusted_content_match = content_match * 0.5 if is_viewed_or_registered else content_match
+                
                 filtered_activities.append({
                     'activity': activity,
-                    'content_match_score': content_match
+                    'content_match_score': adjusted_content_match,
+                    'is_viewed_or_registered': is_viewed_or_registered
                 })
         
         return filtered_activities

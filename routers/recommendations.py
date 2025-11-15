@@ -78,15 +78,22 @@ async def get_recommendations_for_current_user(
             count=rec_request.count
         )
         
-        # 根据请求参数过滤活动
+        # 根据请求参数过滤和调整活动分数
         if rec_request.exclude_viewed or rec_request.exclude_registered or rec_request.exclude_ended:
-            filtered_recommendations = await _filter_recommendations(
+            adjusted_recommendations = await _filter_recommendations(
                 user_id=user_id,
                 recommendations=recommendations,
                 exclude_viewed=rec_request.exclude_viewed,
                 exclude_registered=rec_request.exclude_registered,
                 exclude_ended=rec_request.exclude_ended
             )
+            
+            # 在调整分数后，需要重新排序
+            adjusted_recommendations.sort(
+                key=lambda x: x['recommendation_score'],
+                reverse=True
+            )
+            filtered_recommendations = adjusted_recommendations
         else:
             filtered_recommendations = recommendations
         
@@ -208,15 +215,22 @@ async def get_recommendations_with_debug(
             **recommendation_kwargs
         )
         
-        # 根据请求参数过滤活动
+        # 根据请求参数过滤和调整活动分数
         if debug_request.exclude_viewed or debug_request.exclude_registered or debug_request.exclude_ended:
-            filtered_recommendations = await _filter_recommendations(
+            adjusted_recommendations = await _filter_recommendations(
                 user_id=user_id,
                 recommendations=recommendations,
                 exclude_viewed=debug_request.exclude_viewed,
                 exclude_registered=debug_request.exclude_registered,
                 exclude_ended=debug_request.exclude_ended
             )
+            
+            # 在调整分数后，需要重新排序
+            adjusted_recommendations.sort(
+                key=lambda x: x['recommendation_score'],
+                reverse=True
+            )
+            filtered_recommendations = adjusted_recommendations
         else:
             filtered_recommendations = recommendations
         
@@ -310,22 +324,25 @@ async def _filter_recommendations(
     exclude_ended: bool = True
 ) -> list:
     """
-    根据条件过滤推荐的活动
+    根据条件过滤和调整推荐的活动
+    
+    不再完全排除已浏览/已报名的活动，而是通过降低其推荐分数来处理，
+    确保推荐数量充足。仅过滤已结束的活动。
     
     Args:
         user_id: 用户ID
         recommendations: 推荐活动列表
-        exclude_viewed: 是否排除已浏览活动
-        exclude_registered: 是否排除已报名活动
+        exclude_viewed: 是否降低已浏览活动的分数
+        exclude_registered: 是否降低已报名活动的分数
         exclude_ended: 是否排除已结束活动
     
     Returns:
-        过滤后的推荐列表
+        调整后的推荐列表
     """
     if not recommendations:
         return []
     
-    # 获取用户已浏览和已报名的活动
+    # 获取用户已浏览和已报名的活动（用于降权）
     viewed_activities = set()
     registered_activities = set()
     
@@ -335,25 +352,32 @@ async def _filter_recommendations(
     if exclude_registered:
         registered_activities = set(await recommendation_dao.get_user_registered_activities(user_id))
     
-    filtered = []
+    adjusted = []
     for rec in recommendations:
         activity_id = rec['activity_id']
         
-        # 检查是否应该排除
-        if exclude_viewed and activity_id in viewed_activities:
-            continue
-        if exclude_registered and activity_id in registered_activities:
-            continue
-        
-        # 检查是否已结束
+        # 仅排除已结束的活动
         if exclude_ended:
             activity = await Activities.get_or_none(id=activity_id)
             if activity and activity.status == 'ended':
                 continue
         
-        filtered.append(rec)
+        # 对已浏览/已报名的活动进行降权（额外降低30%）
+        adjusted_rec = rec.copy()
+        penalty_factor = 1.0
+        
+        if exclude_viewed and activity_id in viewed_activities:
+            penalty_factor *= 0.7
+        if exclude_registered and activity_id in registered_activities:
+            penalty_factor *= 0.7
+        
+        # 应用降权系数
+        if penalty_factor < 1.0:
+            adjusted_rec['recommendation_score'] = rec['recommendation_score'] * penalty_factor
+        
+        adjusted.append(adjusted_rec)
     
-    return filtered
+    return adjusted
 
 
 async def _build_user_preference_profile(user_id: int) -> UserPreferenceProfile:
