@@ -196,6 +196,7 @@ async def get_activity_details(
     获取活动详情
     - 任何已登录用户可访问
     - 返回活动详细信息和统计数据
+    - 发布者信息包含手机号和邮箱
     - 浏览量自动+1
     - 记录用户浏览活动的操作日志
     """
@@ -220,7 +221,7 @@ async def get_activity_details(
         # 获取活动统计信息
         stats = await activity_dao.get_activity_stats(activity_id)
 
-        # 组合返回数据
+        # 组合返回数据，使用包含联系方式的发布者信息
         activity_data = ActivityInDB.from_orm(activity).model_dump()
         return {
             "activity": activity_data,

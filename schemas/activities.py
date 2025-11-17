@@ -4,6 +4,19 @@ from pydantic import BaseModel, Field, validator
 from .users import UserBasicInfo
 
 
+class PublisherInfo(BaseModel):
+    """活动发布者信息（包含联系方式）"""
+    id: int = Field(..., description="用户ID")
+    username: str = Field(..., description="用户名")
+    nickname: Optional[str] = Field(None, description="昵称")
+    avatar: Optional[str] = Field(None, description="头像URL")
+    phone: Optional[str] = Field(None, description="手机号")
+    email: Optional[str] = Field(None, description="邮箱")
+
+    class Config:
+        from_attributes = True
+
+
 class ActivityBase(BaseModel):
     """活动基础模式"""
     title: str = Field(default="华南农业大学活动", description="活动名称", min_length=1, max_length=100)
@@ -92,7 +105,7 @@ class ActivityInDB(ActivityBase):
     is_deleted: bool = False
     created_at: datetime
     updated_at: datetime
-    publisher: UserBasicInfo
+    publisher: PublisherInfo
 
     class Config:
         from_attributes = True
