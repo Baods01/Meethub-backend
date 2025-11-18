@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import logging
 from tortoise.contrib.fastapi import register_tortoise
 from settings import TORTOISE_ORM
 from fastapi.security import HTTPBearer
@@ -14,6 +15,13 @@ from routers.user_logs import router as user_logs_router
 from routers.recommendations import router as recommendations_router
 from routers.ai import router as ai_router
 from fastapi.staticfiles import StaticFiles
+from core.status_updater import StatusUpdater
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = FastAPI(
     title="Meethub API",
@@ -63,6 +71,13 @@ register_tortoise(
     app,
     config=TORTOISE_ORM,
 )
+
+# 启动时执行状态检查和纠正
+async def init_status_updater():
+    """初始化状态更新器"""
+    await StatusUpdater.check_and_fix_all_statuses()
+
+app.add_event_handler("startup", init_status_updater)
 
 if __name__ == "__main__":
     uvicorn.run("main:app",host="127.0.0.1",port=8080,reload=True)
