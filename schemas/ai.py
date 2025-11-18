@@ -7,64 +7,13 @@ from typing import Optional, List, Dict, Any
 from enum import Enum
 
 
-class MessageContentType(str, Enum):
-    """消息内容类型"""
-    TEXT = "text"
-    IMAGE = "image"
-    FILE = "file"
-    AUDIO = "audio"
-
-
-class MessageRole(str, Enum):
-    """消息角色"""
-    USER = "user"
-    ASSISTANT = "assistant"
-    SYSTEM = "system"
-
-
-class MessageType(str, Enum):
-    """消息类型"""
-    QUESTION = "question"
-    ANSWER = "answer"
-    SUGGESTION = "suggestion"
-
-
-class MessageRequest(BaseModel):
-    """单条消息请求"""
-    content: str = Field(..., description="消息内容")
-    content_type: MessageContentType = Field(
-        default=MessageContentType.TEXT,
-        description="内容类型"
-    )
-    role: MessageRole = Field(
-        default=MessageRole.USER,
-        description="消息角色"
-    )
-    type: MessageType = Field(
-        default=MessageType.QUESTION,
-        description="消息类型"
-    )
-
-
 class ChatInitiateRequest(BaseModel):
     """发起对话请求"""
     user_id: str = Field(..., description="用户 ID")
     user_input: str = Field(..., description="用户输入内容")
-    conversation_name: str = Field(
-        default="Default",
-        description="对话名称"
-    )
-    stream: bool = Field(
-        default=False,
-        description="是否使用流式响应"
-    )
-    additional_messages: Optional[List[MessageRequest]] = Field(
-        default=None,
-        description="额外的消息列表"
-    )
-    parameters: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="自定义参数"
+    conversation_id: Optional[str] = Field(
+        None,
+        description="对话 ID（可选，为空则创建新对话）"
     )
 
     class Config:
@@ -72,22 +21,142 @@ class ChatInitiateRequest(BaseModel):
             "example": {
                 "user_id": "123456789",
                 "user_input": "请帮我推荐一下学术调研活动",
-                "conversation_name": "Default",
-                "stream": False,
             }
         }
 
 
-class ChatRetrieveRequest(BaseModel):
-    """获取对话详情请求"""
+class UsageInfo(BaseModel):
+    """API 使用统计信息"""
+    token_count: Optional[int] = Field(None, description="总 token 数")
+    input_count: Optional[int] = Field(None, description="输入 token 数")
+    output_count: Optional[int] = Field(None, description="输出 token 数")
+
+
+class ChatStartResponse(BaseModel):
+    """发起对话响应"""
+    id: str = Field(..., description="聊天消息 ID (chat_id)")
     conversation_id: str = Field(..., description="对话 ID")
-    chat_id: str = Field(..., description="聊天消息 ID")
+    bot_id: str = Field(..., description="机器人 ID")
+    user_id: Optional[str] = Field(None, description="用户 ID")
+    status: str = Field(..., description="对话状态 (completed/processing)")
+    created_at: Optional[int] = Field(None, description="创建时间戳")
+    completed_at: Optional[int] = Field(None, description="完成时间戳")
+    usage: Optional[UsageInfo] = Field(None, description="使用统计信息")
+    last_error: Optional[str] = Field(None, description="最后一次错误信息")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "conversation_id": "conv_123456789",
-                "chat_id": "chat_123456789",
+                "id": "738216760624714****",
+                "conversation_id": "738216760624714****",
+                "bot_id": "7569792114469879835",
+                "status": "completed",
+                "created_at": 1718609571,
+                "completed_at": 1718609575,
+                "usage": {
+                    "token_count": 298,
+                    "input_count": 242,
+                    "output_count": 56,
+                }
+            }
+        }
+
+
+class ChatRetrieveResponse(BaseModel):
+    """获取对话详情响应"""
+    id: str = Field(..., description="聊天消息 ID (chat_id)")
+    conversation_id: str = Field(..., description="对话 ID")
+    bot_id: str = Field(..., description="机器人 ID")
+    status: str = Field(..., description="对话状态")
+    created_at: Optional[int] = Field(None, description="创建时间戳")
+    completed_at: Optional[int] = Field(None, description="完成时间戳")
+    usage: Optional[UsageInfo] = Field(None, description="使用统计信息")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "738137187639794****",
+                "conversation_id": "738137187639794****",
+                "bot_id": "737946218936519****",
+                "status": "completed",
+                "created_at": 1718609571,
+                "completed_at": 1718609575,
+                "usage": {
+                    "token_count": 298,
+                    "input_count": 242,
+                    "output_count": 56,
+                }
+            }
+        }
+
+
+class ChatMessage(BaseModel):
+    """聊天消息"""
+    id: str = Field(..., description="消息 ID")
+    content: str = Field(..., description="消息内容")
+    content_type: str = Field(..., description="内容类型 (text/image/file)")
+    role: str = Field(..., description="消息角色 (user/assistant)")
+    type: Optional[str] = Field(None, description="消息类型 (answer/verbose)")
+    bot_id: Optional[str] = Field(None, description="机器人 ID")
+    chat_id: Optional[str] = Field(None, description="聊天消息 ID")
+    conversation_id: Optional[str] = Field(None, description="对话 ID")
+    created_at: Optional[int] = Field(None, description="创建时间戳")
+    updated_at: Optional[int] = Field(None, description="更新时间戳")
+    reasoning_content: Optional[str] = Field(None, description="推理内容（可选）")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "738216760624724****",
+                "content": "2024 年 10 月 1 日是星期二。您可以通过日历或者相关的日期查询工具来核实确认。",
+                "content_type": "text",
+                "role": "assistant",
+                "type": "answer",
+                "bot_id": "7379462189365198898",
+                "conversation_id": "738147352534297****",
+            }
+        }
+
+
+class AiCallResponse(BaseModel):
+    """AI 非流式调用响应（完整的问答流程）"""
+    conversation_id: str = Field(..., description="对话 ID")
+    chat_id: str = Field(..., description="聊天消息 ID")
+    user_input: str = Field(..., description="用户输入的问题")
+    ai_response: Optional[str] = Field(None, description="AI 智能体的回答")
+    status: str = Field(..., description="对话状态")
+    messages: List[ChatMessage] = Field(..., description="所有消息列表")
+    usage: Optional[UsageInfo] = Field(None, description="使用统计信息")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "conversation_id": "738216760624714****",
+                "chat_id": "738216760624714****",
+                "user_input": "2024 年 10 月 1 日是星期几？",
+                "ai_response": "2024 年 10 月 1 日是星期二。您可以通过日历或者相关的日期查询工具来核实确认。",
+                "status": "completed",
+                "messages": [
+                    {
+                        "id": "msg_1",
+                        "content": "2024 年 10 月 1 日是星期几？",
+                        "content_type": "text",
+                        "role": "user",
+                        "type": "question",
+                    },
+                    {
+                        "id": "msg_2",
+                        "content": "2024 年 10 月 1 日是星期二...",
+                        "content_type": "text",
+                        "role": "assistant",
+                        "type": "answer",
+                    }
+                ],
+                "usage": {
+                    "token_count": 298,
+                    "input_count": 242,
+                    "output_count": 56,
+                }
             }
         }
 
@@ -104,151 +173,8 @@ class ChatCancelRequest(BaseModel):
         }
 
 
-class ChatResponse(BaseModel):
-    """对话响应"""
-    conversation_id: str = Field(..., description="对话 ID")
-    chat_id: str = Field(..., description="聊天消息 ID")
-    created_at: Optional[int] = Field(None, description="创建时间戳")
-    updated_at: Optional[int] = Field(None, description="更新时间戳")
-    status: Optional[str] = Field(None, description="对话状态")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "conversation_id": "conv_123456789",
-                "chat_id": "chat_123456789",
-                "created_at": 1700000000,
-                "updated_at": 1700000000,
-                "status": "completed",
-            }
-        }
-
-
-class ChatMessage(BaseModel):
-    """聊天消息"""
-    id: str = Field(..., description="消息 ID")
-    content: str = Field(..., description="消息内容")
-    content_type: MessageContentType = Field(..., description="内容类型")
-    role: MessageRole = Field(..., description="消息角色")
-    created_at: int = Field(..., description="创建时间戳")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "msg_123456789",
-                "content": "我可以为您推荐以下活动...",
-                "content_type": "text",
-                "role": "assistant",
-                "created_at": 1700000000,
-            }
-        }
-
-
-class ChatDetailResponse(BaseModel):
-    """对话详情响应"""
-    conversation_id: str = Field(..., description="对话 ID")
-    chat_id: str = Field(..., description="聊天消息 ID")
-    messages: List[ChatMessage] = Field(..., description="消息列表")
-    status: Optional[str] = Field(None, description="对话状态")
-    created_at: Optional[int] = Field(None, description="创建时间戳")
-    updated_at: Optional[int] = Field(None, description="更新时间戳")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "conversation_id": "conv_123456789",
-                "chat_id": "chat_123456789",
-                "messages": [
-                    {
-                        "id": "msg_1",
-                        "content": "请帮我推荐一下学术调研活动",
-                        "content_type": "text",
-                        "role": "user",
-                        "created_at": 1700000000,
-                    },
-                    {
-                        "id": "msg_2",
-                        "content": "我可以为您推荐以下活动...",
-                        "content_type": "text",
-                        "role": "assistant",
-                        "created_at": 1700000001,
-                    }
-                ],
-                "status": "completed",
-                "created_at": 1700000000,
-                "updated_at": 1700000001,
-            }
-        }
-
-
 class CancelChatResponse(BaseModel):
     """取消对话响应"""
     conversation_id: str = Field(..., description="对话 ID")
-    status: str = Field(..., description="取消状态")
+    status: Optional[str] = Field(None, description="取消状态")
     message: Optional[str] = Field(None, description="响应消息")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "conversation_id": "conv_123456789",
-                "status": "cancelled",
-                "message": "对话已取消",
-            }
-        }
-
-
-class RecommendationRequest(BaseModel):
-    """推荐请求（高级功能）"""
-    user_id: str = Field(..., description="用户 ID")
-    user_input: str = Field(..., description="推荐需求描述")
-    context: Optional[Dict[str, Any]] = Field(
-        None,
-        description="额外的上下文信息，如用户偏好、已参加活动等"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "user_id": "123456789",
-                "user_input": "我对学术调研感兴趣",
-                "context": {
-                    "user_interests": ["学术", "调研"],
-                    "grade": "大一",
-                }
-            }
-        }
-
-
-class RecommendationResponse(BaseModel):
-    """推荐响应"""
-    conversation_id: str = Field(..., description="对话 ID")
-    chat_id: str = Field(..., description="聊天消息 ID")
-    recommendations: List[Dict[str, Any]] = Field(
-        ...,
-        description="推荐的活动列表"
-    )
-    explanation: Optional[str] = Field(
-        None,
-        description="推荐的原因说明"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "conversation_id": "conv_123456789",
-                "chat_id": "chat_123456789",
-                "recommendations": [
-                    {
-                        "activity_id": "act_1",
-                        "name": "学术调研交流会",
-                        "score": 0.95,
-                    },
-                    {
-                        "activity_id": "act_2",
-                        "name": "科研经验分享",
-                        "score": 0.87,
-                    }
-                ],
-                "explanation": "基于您的兴趣，推荐学术相关的活动",
-            }
-        }

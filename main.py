@@ -12,6 +12,7 @@ from routers.registrations import router as registrations_router
 from routers.uploads import router as uploads_router
 from routers.user_logs import router as user_logs_router
 from routers.recommendations import router as recommendations_router
+from routers.ai import router as ai_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app = FastAPI(
         {"name": "报名", "description": "报名相关接口"},
         {"name": "文件", "description": "文件相关接口"},
         {"name": "日志", "description": "用户操作日志相关接口"},
+        {"name": "AI", "description": "AI 智能体相关接口"},
     ]
 )
 
@@ -52,6 +54,7 @@ app.include_router(registrations_router)
 app.include_router(uploads_router)
 app.include_router(user_logs_router)
 app.include_router(recommendations_router)
+app.include_router(ai_router)
 
 # 挂载静态文件目录以便直接访问上传的文件
 app.mount("/static", StaticFiles(directory="static"), name="static")

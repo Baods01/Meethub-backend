@@ -4,7 +4,7 @@ Coze AI 智能体 HTTP 客户端
 """
 import httpx
 import json
-from typing import Optional, Dict, Any, AsyncGenerator
+from typing import Optional, Dict, Any, AsyncGenerator, List
 from settings import COZE_CONFIG
 
 
@@ -19,7 +19,6 @@ class CozeClient:
         self.api_token = COZE_CONFIG['api_token']
         self.api_base_url = COZE_CONFIG['api_base_url']
         self.bot_id = COZE_CONFIG['bot_id']
-        self.workflow_id = COZE_CONFIG['workflow_id']
         self.timeout = COZE_CONFIG['timeout']
 
     def _get_headers(self) -> Dict[str, str]:
@@ -33,10 +32,8 @@ class CozeClient:
         self,
         user_id: str,
         user_input: str,
-        conversation_name: str = "Default",
-        stream: bool = True,
-        additional_messages: Optional[list] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        conversation_id: Optional[str] = None,
+        auto_save_history: bool = True,
     ) -> Dict[str, Any]:
         """
         发起对话请求
@@ -44,56 +41,51 @@ class CozeClient:
         Args:
             user_id: 用户 ID
             user_input: 用户输入内容
-            conversation_name: 对话名称
-            stream: 是否使用流式响应
-            additional_messages: 额外的消息列表
-            parameters: 自定义参数
+            conversation_id: 对话 ID（可选，为空则创建新对话）
+            auto_save_history: 是否自动保存历史记录
 
         Returns:
-            API 响应字典，包含 conversation_id 和 chat_id
+            API 响应字典，包含 id(chat_id)、conversation_id 和 status
         """
         url = f"{self.api_base_url}/chat"
+        
+        # 如果提供了 conversation_id，添加到 URL 参数中
+        params = {}
+        if conversation_id:
+            params['conversation_id'] = conversation_id
 
         # 构建请求体
         payload = {
             "bot_id": self.bot_id,
-            "workflow_id": self.workflow_id,
             "user_id": user_id,
-            "stream": stream,
-            "additional_messages": additional_messages or [],
-            "parameters": parameters or {
-                "BOT_USER_INPUT": user_input,
-                "CONVERSATION_NAME": conversation_name,
-            },
-        }
-
-        # 如果没有提供 additional_messages，使用默认的问题格式
-        if not additional_messages:
-            payload["additional_messages"] = [
+            "stream": False,
+            "auto_save_history": auto_save_history,
+            "additional_messages": [
                 {
+                    "role": "user",
                     "content": user_input,
                     "content_type": "text",
-                    "role": "user",
-                    "type": "question",
                 }
             ]
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
                 url,
                 headers=self._get_headers(),
                 json=payload,
+                params=params if params else None,
             )
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            # 返回 data 字段内容
+            return result.get('data', {})
 
     async def start_chat_stream(
         self,
         user_id: str,
         user_input: str,
-        conversation_name: str = "Default",
-        additional_messages: Optional[list] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        conversation_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """
         发起流式对话请求
@@ -101,38 +93,32 @@ class CozeClient:
         Args:
             user_id: 用户 ID
             user_input: 用户输入内容
-            conversation_name: 对话名称
-            additional_messages: 额外的消息列表
-            parameters: 自定义参数
+            conversation_id: 对话 ID（可选，为空则创建新对话）
 
         Yields:
             逐行的响应内容
         """
         url = f"{self.api_base_url}/chat"
+        
+        # 如果提供了 conversation_id，添加到 URL 参数中
+        params = {}
+        if conversation_id:
+            params['conversation_id'] = conversation_id
 
         # 构建请求体
         payload = {
             "bot_id": self.bot_id,
-            "workflow_id": self.workflow_id,
             "user_id": user_id,
             "stream": True,
-            "additional_messages": additional_messages or [],
-            "parameters": parameters or {
-                "BOT_USER_INPUT": user_input,
-                "CONVERSATION_NAME": conversation_name,
-            },
-        }
-
-        # 如果没有提供 additional_messages，使用默认的问题格式
-        if not additional_messages:
-            payload["additional_messages"] = [
+            "auto_save_history": True,
+            "additional_messages": [
                 {
+                    "role": "user",
                     "content": user_input,
                     "content_type": "text",
-                    "role": "user",
-                    "type": "question",
                 }
             ]
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             async with client.stream(
@@ -140,6 +126,7 @@ class CozeClient:
                 url,
                 headers=self._get_headers(),
                 json=payload,
+                params=params if params else None,
             ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -168,8 +155,37 @@ class CozeClient:
             "chat_id": chat_id,
         }
 
-        payload = {
-            "workflow_id": self.workflow_id,
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(
+                url,
+                headers=self._get_headers(),
+                params=params,
+            )
+            response.raise_for_status()
+            result = response.json()
+            # 返回 data 字段内容
+            return result.get('data', {})
+
+    async def get_chat_messages(
+        self,
+        conversation_id: str,
+        chat_id: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        获取对话消息列表
+
+        Args:
+            conversation_id: 对话 ID
+            chat_id: 聊天消息 ID
+
+        Returns:
+            消息列表
+        """
+        url = f"{self.api_base_url}/chat/message/list"
+
+        params = {
+            "conversation_id": conversation_id,
+            "chat_id": chat_id,
         }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -177,10 +193,11 @@ class CozeClient:
                 url,
                 headers=self._get_headers(),
                 params=params,
-                json=payload,
             )
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            # 返回 data 字段内容（消息列表）
+            return result.get('data', [])
 
     async def cancel_chat(
         self,
@@ -199,7 +216,6 @@ class CozeClient:
 
         payload = {
             "conversation_id": conversation_id,
-            "workflow_id": self.workflow_id,
         }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -209,4 +225,6 @@ class CozeClient:
                 json=payload,
             )
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            # 返回 data 字段内容
+            return result.get('data', {})

@@ -16,7 +16,9 @@ class UserOperationLogs(models.Model):
     activity = fields.ForeignKeyField(
         'models.Activities',
         related_name='user_logs',
-        description="关联活动"
+        null=True,
+        on_delete=fields.CASCADE,
+        description="关联活动（可选，某些操作不涉及活动）"
     )
     
     # 操作类型：view_activity（浏览活动）、register_activity（报名活动）

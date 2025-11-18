@@ -136,6 +136,41 @@ class OperationLogger:
             logger.error(f"记录操作日志失败: {str(e)}")
             return False
 
+    async def log_operation(
+        self,
+        user_id: int,
+        operation_type: str,
+        activity_id: int = 0,
+        extra_data: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        记录用户操作（通用方法）
+        
+        Args:
+            user_id: 用户ID
+            operation_type: 操作类型
+            activity_id: 活动ID（可选，默认为0表示非活动相关操作）
+            extra_data: 附加数据
+        
+        Returns:
+            是否记录成功
+        """
+        try:
+            # 记录日志
+            await self.log_dao.create_log(
+                user_id=user_id,
+                activity_id=activity_id,
+                operation_type=operation_type,
+                extra_data=extra_data or {}
+            )
+            
+            logger.info(f"用户 {user_id} 执行了操作 {operation_type}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"记录操作日志失败: {str(e)}")
+            return False
+
 
 # 全局日志记录器实例
 operation_logger = OperationLogger()
